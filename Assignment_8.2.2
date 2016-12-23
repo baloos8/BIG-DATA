@@ -1,0 +1,111 @@
+#CONCAT:
+
+students = LOAD 'students' USING PigStorage(',') AS (id:int,firstname:chararray,lastname:chararray,age:int,phone:long,city:chararray,gpa:int);
+
+
+CONCAT = FOREACH students GENERATE CONCAT(firstname,lastname);
+
+
+
+#Tokenize:
+
+file = LOAD 'word_count' USING PigStorage('\t') AS (string:chararray);
+
+
+plit = FOREACH file GENERATE TOKENIZE(string) AS word;
+
+
+
+#Sum:
+
+eexp = LOAD 'emp_expenses' USING PigStorage('\t') AS (Xid:int,exp:int);
+
+
+grp = GROUP eexp BY Xid;
+
+
+SUM = FOREACH grp GENERATE group, SUM(eexp.exp);
+
+
+
+#MAX:
+
+eexp = LOAD 'emp_expenses' USING PigStorage('\t') AS (Xid:int,exp:int);
+
+
+grp = GROUP eexp BY Xid;
+
+
+MAX = FOREACH grp GENERATE group, MAX(eexp.exp);
+
+
+
+#MIN:
+
+eexp = LOAD 'emp_expenses' USING PigStorage('\t') AS (Xid:int,exp:int);
+
+grp = GROUP eexp BY Xid;
+
+
+MIN = FOREACH grp GENERATE group, MIN(eexp.exp);
+
+
+
+#Limit, Distinct, Flatten
+
+
+edetails = LOAD 'employee_details' USING PigStorage(',') AS (id:int,name:chararray,sal:int,rank:int);
+
+
+eexp = LOAD 'emp_expenses' USING PigStorage('\t') AS (Xid:int,exp:int);
+
+
+Jemp = Join edetails BY id, eexp BY Xid;
+
+
+gemp = GROUP Jemp BY $0;
+teexp = FOREACH gemp GENERATE group,Jemp.$1, SUM(Jemp.$5);
+
+
+Femp = FOREACH teexp GENERATE $0,FLATTEN($1),$2;
+
+
+demp = distinct Femp;
+
+
+esrt = ORDER demp BY $2 desc;
+
+
+emax = LIMIT esrt 1;
+dump emax;
+
+
+
+#IsEmpty
+
+edetails = LOAD 'employee_details' USING PigStorage(',') AS (id:int,name:chararray,sal:int,rank:int);
+
+
+eexp = LOAD 'emp_expenses' USING PigStorage('\t') AS (Xid:int,exp:int);
+
+
+co_group = COGROUP edetails BY id, eexp BY id;
+
+
+is_empty = FILTER co_group BY IsEmpty(edetails);
+
+
+
+#Store
+
+
+edetails = LOAD 'employee_details' USING PigStorage(',') AS (id:int,name:chararray,sal:int,rank:int);
+
+
+STORE edetails INTO '/user/root/Balu' USING PigStorage(',');
+
+
+
+
+
+
